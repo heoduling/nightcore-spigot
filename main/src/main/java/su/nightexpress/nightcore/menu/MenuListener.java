@@ -26,7 +26,19 @@ public class MenuListener extends AbstractListener<NightCore> {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onQuit(PlayerQuitEvent event) {
-        AbstractMenu.PLAYER_MENUS.remove(event.getPlayer().getUniqueId());
+        Player player = event.getPlayer();
+        Menu menu = AbstractMenu.getMenu(player);
+        if (menu == null) return;
+
+        MenuViewer viewer = menu.getViewer(player);
+        if (viewer != null && viewer.getPlayer() != player) return;
+
+        if (menu instanceof AbstractMenu<?> legacyMenu) {
+            legacyMenu.onClose(player);
+        }
+        else {
+            AbstractMenu.PLAYER_MENUS.remove(player.getUniqueId(), menu);
+        }
     }
 
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
@@ -37,7 +49,7 @@ public class MenuListener extends AbstractListener<NightCore> {
         if (menu == null) return;
 
         MenuViewer viewer = menu.getViewer(player);
-        if (viewer == null) return;
+        if (viewer == null || viewer.getPlayer() != player) return;
 
         if (!viewer.canClickAgain(CoreConfig.MENU_CLICK_COOLDOWN.get())) {
             event.setCancelled(true);
@@ -62,7 +74,7 @@ public class MenuListener extends AbstractListener<NightCore> {
         if (menu == null) return;
 
         MenuViewer viewer = menu.getViewer(player);
-        if (viewer == null) return;
+        if (viewer == null || viewer.getPlayer() != player) return;
 
         menu.onDrag(viewer, event);
     }
@@ -75,7 +87,7 @@ public class MenuListener extends AbstractListener<NightCore> {
         if (menu == null) return;
 
         MenuViewer viewer = menu.getViewer(player);
-        if (viewer == null) return;
+        if (viewer == null || viewer.getPlayer() != player) return;
 
         menu.onClose(viewer, event);
     }

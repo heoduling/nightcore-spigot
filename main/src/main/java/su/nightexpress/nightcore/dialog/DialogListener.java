@@ -22,7 +22,7 @@ public class DialogListener extends AbstractListener<NightCore> {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onQuit(PlayerQuitEvent event) {
-        Dialog.stop(event.getPlayer());
+        Dialog.cancel(event.getPlayer());
     }
 
     @EventHandler(priority = EventPriority.LOWEST)

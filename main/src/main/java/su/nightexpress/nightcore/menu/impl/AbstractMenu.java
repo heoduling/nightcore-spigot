@@ -231,6 +231,9 @@ public abstract class AbstractMenu<P extends NightCorePlugin> implements Menu {
     }
 
     public void onClose(@NonNull Player player) {
+        MenuViewer current = this.getViewer(player);
+        if (current != null && current.getPlayer() != player) return;
+
         MenuViewer viewer = this.purgeViewer(player);
 
         // Do not clear link if entered Editor, so it can reopen menu without data loss when done.
@@ -239,7 +242,7 @@ public abstract class AbstractMenu<P extends NightCorePlugin> implements Menu {
             linked.getLink().clear(viewer);
         }
 
-        PLAYER_MENUS.remove(player.getUniqueId());
+        PLAYER_MENUS.remove(player.getUniqueId(), this);
 
         if (this.getViewers().isEmpty() && !this.isPersistent()) {
             this.clear();

@@ -210,14 +210,26 @@ public class Dialog {
     }
 
     public static void stop(@NonNull Player player) {
-        Dialog dialog = DIALOG_MAP.remove(player.getUniqueId());
-        if (dialog == null) return;
+        stop(player, true);
+    }
+
+    public static void cancel(@NonNull Player player) {
+        stop(player, false);
+    }
+
+    private static void stop(@NonNull Player player, boolean restoreMenu) {
+        Dialog dialog = get(player);
+        if (dialog == null || dialog.getPlayer() != player
+            || !DIALOG_MAP.remove(player.getUniqueId(), dialog)) return;
 
         Menu menu = dialog.getLastMenu();
-        if (menu != null) {
-            menu.open(player);
+        if (restoreMenu) {
+            if (menu != null) menu.open(player);
+            player.sendTitle("", "", 1, 1, 1);
         }
-        player.sendTitle("", "", 1, 1, 1);
+        else if (menu instanceof AbstractMenu<?> legacyMenu) {
+            legacyMenu.onClose(player);
+        }
     }
 
     public static void shutdown() {
