@@ -29,23 +29,33 @@ public class CommandUtil {
     @Deprecated
     public static void register(@NonNull Plugin plugin, @NonNull NightPluginCommand command) {
         WrappedCommand wrappedCommand = new WrappedCommand(plugin, command);
-        if (getCommandMap().register(plugin.getName(), wrappedCommand)) {
+        register(wrappedCommand, plugin.getName());
+        if (wrappedCommand.isRegistered()) {
             command.setBackend(wrappedCommand);
         }
     }
 
     public static boolean register(@NonNull Plugin plugin, @NonNull WrappedCommand wrappedCommand) {
-        return getCommandMap().register(plugin.getName(), wrappedCommand);
+        return register(wrappedCommand, plugin.getName());
     }
 
     public static boolean register(@NonNull Command command, @NonNull String fallbackPrefix) {
         boolean registered = getCommandMap().register(fallbackPrefix, command);
-        FormattedCommandAlias text = HELP_TEXTS.get(command.getLabel());
-        if (text != null && command.isRegistered()) {
-            updateHelpText(text, command);
-            text.register(getCommandMap());
-        }
+        if (command.isRegistered()) restoreHelpCommand(command);
         return registered;
+    }
+
+    private static void restoreHelpCommand(@NonNull Command command) {
+        String label = command.getLabel();
+        FormattedCommandAlias text = HELP_TEXTS.get(label);
+        if (text == null) return;
+
+        var topic = Bukkit.getHelpMap().getHelpTopic("/" + label);
+        if (topic != null && topic.getClass() == GenericCommandHelpTopic.class
+            && Reflex.getFieldValue(topic, "command") == text
+            && Reflex.setFieldValue(topic, "command", command)) {
+            HELP_TEXTS.remove(label);
+        }
     }
 
     private static void updateHelpText(@NonNull FormattedCommandAlias text, @NonNull Command command) {
@@ -59,19 +69,16 @@ public class CommandUtil {
         var topic = Bukkit.getHelpMap().getHelpTopic("/" + label);
         if (topic == null || topic.getClass() != GenericCommandHelpTopic.class) return;
 
-        FormattedCommandAlias text = HELP_TEXTS.get(label);
         if (Reflex.getFieldValue(topic, "command") == command) {
             // Preserve the native topic, its text and indexes while releasing the retired command.
-            text = new FormattedCommandAlias(label, new String[0]);
+            FormattedCommandAlias text = new FormattedCommandAlias(label, new String[0]);
             updateHelpText(text, command);
             if (!Reflex.setFieldValue(topic, "command", text)) return;
             HELP_TEXTS.put(label, text);
         }
-        if (text != null) text.unregister(getCommandMap());
     }
 
     public static void clearHelpTexts() {
-        HELP_TEXTS.values().forEach(text -> text.unregister(getCommandMap()));
         HELP_TEXTS.clear();
     }
 
@@ -99,8 +106,7 @@ public class CommandUtil {
         if (!command.unregister(commandMap)) return false;
         unregisterHelpText(command, label);
 
-        return knownCommands.keySet().removeIf(key -> key.equalsIgnoreCase(command.getName()) || command.getAliases()
-            .contains(key));
+        return knownCommands.values().removeIf(registered -> registered == command);
     }
 
     @NonNull

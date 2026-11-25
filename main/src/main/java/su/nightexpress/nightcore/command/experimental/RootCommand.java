@@ -78,7 +78,7 @@ public class RootCommand<P extends NightCorePlugin, S extends CommandNode> imple
 
     @Override
     public boolean unregister() {
-        if (CommandUtil.unregister(this.getNode().getName())) {
+        if (this.backend != null && CommandUtil.unregister(this.backend)) {
             this.backend = null;
             return true;
         }

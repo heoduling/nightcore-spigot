@@ -123,14 +123,20 @@ public class CommandManager extends SimpleManager<NightPlugin> {
     @Deprecated
     public boolean unregisterCommand(@NonNull NightPluginCommand command) {
         if (this.commands.remove(command)) {
-            return CommandUtil.unregister(command.getAliases()[0]);
+            var backend = command.getBackend();
+            return backend != null && CommandUtil.unregister(backend);
         }
         return false;
     }
 
     public void registerCommand(@NonNull ServerCommand command) {
         if (!this.serverCommands.contains(command)) {
-            if (command.register()) {
+            boolean registered = command.register();
+            if (!registered) {
+                var backend = command.getBackend();
+                registered = backend != null && backend.isRegistered();
+            }
+            if (registered) {
                 this.serverCommands.add(command);
             }
         }
