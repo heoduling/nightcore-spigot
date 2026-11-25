@@ -47,6 +47,9 @@ nightcore = plugins / 'nightcore'
 if not nightcore.exists():
     nightcore.mkdir()
     (nightcore / 'engine.yml').write_text('Plugin:\n  Language: en\nDatabase:\n  Type: SQLITE\n', encoding='utf-8')
+cached_languages = seed / 'plugins/nightcore/lang'
+if cached_languages.exists():
+    shutil.copytree(cached_languages, nightcore / 'lang', dirs_exist_ok=True)
 if args.with_combatpets:
     shutil.copy2(pet_plugin, plugins / 'CombatPets.jar')
     pet_config = plugins / 'CombatPets'
